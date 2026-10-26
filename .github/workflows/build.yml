@@ -1,0 +1,62 @@
+name: Build APK
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch: # manuell starten: Actions -> Build APK -> Run workflow
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v5
+
+      # Findet den Ordner mit settings.gradle.kts - egal ob das Projekt im
+      # Repo-Root oder in einem Unterordner (z. B. SecretEQ/) liegt.
+      - name: Gradle-Projektordner suchen
+        id: proj
+        shell: bash
+        run: |
+          f="$(find . -maxdepth 3 -name settings.gradle.kts -print -quit)"
+          if [ -z "$f" ]; then
+            echo "::error::settings.gradle.kts nicht gefunden - sind die Projektdateien im Repo?"
+            exit 1
+          fi
+          echo "dir=$(dirname "$f")" >> "$GITHUB_OUTPUT"
+          echo "Projektordner: $(dirname "$f")"
+
+      - name: Java 17 einrichten
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # Gradle wird hier direkt installiert -> kein gradlew und keine
+      # gradle-wrapper.jar im Repo noetig. 8.5 passt zu AGP 8.2.2 + Kotlin 1.9.22.
+      - name: Gradle 8.5 einrichten
+        uses: gradle/actions/setup-gradle@v5
+        with:
+          gradle-version: '8.5'
+
+      - name: Debug-APK bauen
+        working-directory: ${{ steps.proj.outputs.dir }}
+        run: gradle :app:assembleDebug --stacktrace
+
+      - name: APK hochladen
+        uses: actions/upload-artifact@v6
+        with:
+          name: SecretEQ-debug-apk
+          path: ${{ steps.proj.outputs.dir }}/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      # Laeuft nach dem Upload und blockiert das APK nicht.
+      - name: Unit-Tests
+        continue-on-error: true
+        working-directory: ${{ steps.proj.outputs.dir }}
+        run: gradle :app:testDebugUnitTest --stacktrace
