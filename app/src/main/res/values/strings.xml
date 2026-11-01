@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Secret EQ</string>
+    <string name="accessibility_service_description">
+        Secret EQ nutzt die Bedienungshilfe ausschließlich, um zu erkennen, welche App im Vordergrund ist
+        (z. B. Spiel, Browser, YouTube). Dadurch kann automatisch das passende EQ-Profil aktiviert werden.\n\n
+        Es werden weder Bildschirminhalte gelesen noch Gesten ausgeführt oder andere Apps gesteuert.
+        Die eigentliche Klangverarbeitung läuft über die normale Android-AudioEffect-Schnittstelle (Session 0)
+        und ist geräteabhängig.
+    </string>
+</resources>
